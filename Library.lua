@@ -1,36 +1,29 @@
 local Library = {
     Name = 'LinoriaLibrary',
-    Version = '1.0.0'
+    Version = '1.0.0',
+    Toggles = {},
+    Options = {},
 }
 
--- Services
-local RunService = game:GetService('RunService')
+local RunService       = game:GetService('RunService')
 local UserInputService = game:GetService('UserInputService')
-local TweenService = game:GetService('TweenService')
+local TweenService     = game:GetService('TweenService')
 
--- Variables
-local Toggles = {}
-local Options = {}
-local Tabs    = {}
-
--- Theme
 local Theme = {
     BackgroundColor = Color3.fromRGB(25, 25, 25),
     MainColor       = Color3.fromRGB(45, 45, 45),
     AccentColor     = Color3.fromRGB(0, 85, 255),
     OutlineColor    = Color3.fromRGB(50, 50, 50),
-    TextColor       = Color3.fromRGB(255, 255, 255)
+    TextColor       = Color3.fromRGB(255, 255, 255),
+    BorderColor     = Color3.fromRGB(60, 60, 60)
 }
 
--- Utility Functions
 local Utility = {
     Create = function(instanceType, properties)
         local instance = Instance.new(instanceType)
-        
         for property, value in next, properties do
             instance[property] = value
         end
-        
         return instance
     end
 }
@@ -39,24 +32,29 @@ function Library:CreateWindow(options)
     options = options or {}
     local WindowName = options.Name or 'Linoria Library'
     
-    -- Main Window
     local Window = Utility.Create('ScreenGui', {
         Name = 'Window',
         Parent = game.CoreGui
     })
 
-    -- Main Container
+    local Border = Utility.Create('Frame', {
+        Name = 'Border',
+        Parent = Window,
+        BackgroundColor3 = Theme.BorderColor,
+        Position = UDim2.new(0.5, -301, 0.5, -251),
+        Size = UDim2.new(0, 602, 0, 502)
+    })
+
     local Main = Utility.Create('Frame', {
         Name = 'Main',
-        Parent = Window,
+        Parent = Border,
         BackgroundColor3 = Theme.BackgroundColor,
         BorderColor3 = Theme.OutlineColor,
         BorderSizePixel = 1,
-        Position = UDim2.new(0.5, -300, 0.5, -250),
-        Size = UDim2.new(0, 600, 0, 500)
+        Position = UDim2.new(0, 1, 0, 1),
+        Size = UDim2.new(1, -2, 1, -2)
     })
 
-    -- Title Bar
     local TitleBar = Utility.Create('Frame', {
         Name = 'TitleBar',
         Parent = Main,
@@ -79,7 +77,6 @@ function Library:CreateWindow(options)
         TextXAlignment = Enum.TextXAlignment.Left
     })
 
-    -- Content Container
     local ContentContainer = Utility.Create('Frame', {
         Name = 'ContentContainer',
         Parent = Main,
@@ -90,7 +87,6 @@ function Library:CreateWindow(options)
         Size = UDim2.new(1, 0, 1, -30)
     })
 
-    -- Tab Container
     local TabContainer = Utility.Create('Frame', {
         Name = 'TabContainer',
         Parent = ContentContainer,
@@ -104,19 +100,17 @@ function Library:CreateWindow(options)
         Name = 'TabList',
         Parent = TabContainer,
         BackgroundTransparency = 1,
-        Position = UDim2.new(0, 0, 0, 0),
         Size = UDim2.new(1, 0, 1, 0),
         CanvasSize = UDim2.new(0, 0, 0, 0),
         ScrollBarThickness = 0
     })
 
-    local TabListLayout = Utility.Create('UIListLayout', {
+    Utility.Create('UIListLayout', {
         Parent = TabList,
         SortOrder = Enum.SortOrder.LayoutOrder,
         Padding = UDim.new(0, 2)
     })
 
-    -- Tab Content Area
     local TabContentArea = Utility.Create('Frame', {
         Name = 'TabContentArea',
         Parent = ContentContainer,
@@ -125,16 +119,13 @@ function Library:CreateWindow(options)
         Size = UDim2.new(1, -125, 1, 0)
     })
 
-    -- Dragging Functionality
-    local Dragging = false
-    local DragStart = nil
-    local StartPosition = nil
+    local Dragging, DragStart, StartPosition = false, nil, nil
 
     TitleBar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
             Dragging = true
             DragStart = input.Position
-            StartPosition = Main.Position
+            StartPosition = Border.Position
         end
     end)
 
@@ -147,7 +138,7 @@ function Library:CreateWindow(options)
     UserInputService.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement and Dragging then
             local Delta = input.Position - DragStart
-            Main.Position = UDim2.new(
+            Border.Position = UDim2.new(
                 StartPosition.X.Scale,
                 StartPosition.X.Offset + Delta.X,
                 StartPosition.Y.Scale,
@@ -156,9 +147,55 @@ function Library:CreateWindow(options)
         end
     end)
 
-    local Window = {
-        Tabs = {}
-    }
+    local Window = { Tabs = {} }
+
+    function Window:CreateToggle(tab, groupbox, name, default, callback)
+        local Toggle = {
+            Value = default or false,
+            Callback = callback or function() end
+        }
+
+        local ToggleContainer = Utility.Create('Frame', {
+            Name = name .. 'Toggle',
+            Parent = groupbox,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 25)
+        })
+
+        local ToggleButton = Utility.Create('Frame', {
+            Name = 'Button',
+            Parent = ToggleContainer,
+            BackgroundColor3 = Toggle.Value and Theme.AccentColor or Theme.MainColor,
+            BorderColor3 = Theme.OutlineColor,
+            BorderSizePixel = 1,
+            Position = UDim2.new(0, 8, 0, 4),
+            Size = UDim2.new(0, 16, 0, 16)
+        })
+
+        local ToggleText = Utility.Create('TextLabel', {
+            Name = 'Text',
+            Parent = ToggleContainer,
+            BackgroundTransparency = 1,
+            Position = UDim2.new(0, 32, 0, 0),
+            Size = UDim2.new(1, -40, 1, 0),
+            Font = Enum.Font.Gotham,
+            Text = name,
+            TextColor3 = Theme.TextColor,
+            TextSize = 13,
+            TextXAlignment = Enum.TextXAlignment.Left
+        })
+
+        ToggleButton.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                Toggle.Value = not Toggle.Value
+                ToggleButton.BackgroundColor3 = Toggle.Value and Theme.AccentColor or Theme.MainColor
+                Toggle.Callback(Toggle.Value)
+            end
+        end)
+
+        Library.Toggles[name] = Toggle
+        return Toggle
+    end
 
     function Window:CreateTab(name)
         local Tab = {
@@ -166,7 +203,6 @@ function Library:CreateWindow(options)
             GroupBoxes = {}
         }
 
-        -- Tab Button
         local TabButton = Utility.Create('TextButton', {
             Name = name .. 'Button',
             Parent = TabList,
@@ -181,7 +217,6 @@ function Library:CreateWindow(options)
             AutoButtonColor = false
         })
 
-        -- Tab Content
         local TabContent = Utility.Create('Frame', {
             Name = name .. 'Content',
             Parent = TabContentArea,
@@ -190,7 +225,6 @@ function Library:CreateWindow(options)
             Visible = false
         })
 
-        -- Left Column
         local LeftColumn = Utility.Create('Frame', {
             Name = 'LeftColumn',
             Parent = TabContent,
@@ -199,7 +233,6 @@ function Library:CreateWindow(options)
             Size = UDim2.new(0.5, -12, 1, -16)
         })
 
-        -- Right Column
         local RightColumn = Utility.Create('Frame', {
             Name = 'RightColumn',
             Parent = TabContent,
@@ -224,7 +257,6 @@ function Library:CreateWindow(options)
 
         table.insert(Window.Tabs, Tab)
 
-        -- Show first tab by default
         if #Window.Tabs == 1 then
             TabContent.Visible = true
             TabButton.BackgroundColor3 = Theme.AccentColor
@@ -243,7 +275,7 @@ function Library:CreateWindow(options)
                 Size = UDim2.new(1, 0, 0, 100)
             })
 
-            local GroupBoxTitle = Utility.Create('TextLabel', {
+            Utility.Create('TextLabel', {
                 Name = 'Title',
                 Parent = GroupBox,
                 BackgroundTransparency = 1,
