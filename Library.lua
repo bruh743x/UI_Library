@@ -11,15 +11,15 @@ local TweenService = game:GetService('TweenService')
 -- Variables
 local Toggles = {}
 local Options = {}
-local Tabs = {}
+local Tabs    = {}
 
 -- Theme
 local Theme = {
     BackgroundColor = Color3.fromRGB(25, 25, 25),
-    MainColor = Color3.fromRGB(45, 45, 45),
-    AccentColor = Color3.fromRGB(0, 85, 255),
-    OutlineColor = Color3.fromRGB(50, 50, 50),
-    TextColor = Color3.fromRGB(255, 255, 255)
+    MainColor       = Color3.fromRGB(45, 45, 45),
+    AccentColor     = Color3.fromRGB(0, 85, 255),
+    OutlineColor    = Color3.fromRGB(50, 50, 50),
+    TextColor       = Color3.fromRGB(255, 255, 255)
 }
 
 -- Utility Functions
