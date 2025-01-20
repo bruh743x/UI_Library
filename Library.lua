@@ -1,289 +1,268 @@
 local Library = {
-    Registry = {},
-    Tabs = {},
-    SelectedTab = nil,
-    DragStartPosition = nil,
-    GuiPosition = nil,
-    Dragging = false
+    Name = 'LinoriaLibrary',
+    Version = '1.0.0'
+}
+
+-- Services
+local RunService = game:GetService('RunService')
+local UserInputService = game:GetService('UserInputService')
+local TweenService = game:GetService('TweenService')
+
+-- Variables
+local Toggles = {}
+local Options = {}
+local Tabs = {}
+
+-- Theme
+local Theme = {
+    BackgroundColor = Color3.fromRGB(25, 25, 25),
+    MainColor = Color3.fromRGB(45, 45, 45),
+    AccentColor = Color3.fromRGB(0, 85, 255),
+    OutlineColor = Color3.fromRGB(50, 50, 50),
+    TextColor = Color3.fromRGB(255, 255, 255)
 }
 
 -- Utility Functions
-local function Create(className, properties)
-    local instance = Instance.new(className)
-    for property, value in pairs(properties or {}) do
-        instance[property] = value
+local Utility = {
+    Create = function(instanceType, properties)
+        local instance = Instance.new(instanceType)
+        
+        for property, value in next, properties do
+            instance[property] = value
+        end
+        
+        return instance
     end
-    return instance
-end
+}
 
-local function MakeDraggable(gui, handle)
-    local UserInputService = game:GetService("UserInputService")
-    local RunService = game:GetService("RunService")
+function Library:CreateWindow(options)
+    options = options or {}
+    local WindowName = options.Name or 'Linoria Library'
     
-    local dragStart
-    local startPos
-    local dragging = false
-    
-    handle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            dragStart = input.Position
-            startPos = gui.Position
-        end
-    end)
-    
-    handle.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = false
-        end
-    end)
-    
-    UserInputService.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
-            local delta = input.Position - dragStart
-            gui.Position = UDim2.new(
-                startPos.X.Scale,
-                startPos.X.Offset + delta.X,
-                startPos.Y.Scale,
-                startPos.Y.Offset + delta.Y
-            )
-        end
-    end)
-end
-
--- Initialize Main UI
-function Library:Init(title)
-    if self.ScreenGui then
-        self:Destroy()
-    end
-
-    self.ScreenGui = Create("ScreenGui", {
-        Name = "UILibrary",
-        Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui"),
-        ResetOnSpawn = false
+    -- Main Window
+    local Window = Utility.Create('ScreenGui', {
+        Name = 'Window',
+        Parent = game.CoreGui
     })
 
     -- Main Container
-    self.Main = Create("Frame", {
-        Name = "Main",
-        Parent = self.ScreenGui,
-        BackgroundColor3 = Color3.fromRGB(56, 56, 56),
-        BorderColor3 = Color3.fromRGB(0, 0, 0),
-        BorderSizePixel = 5,
-        Position = UDim2.new(0.2, 0, 0.2, 0),
-        Size = UDim2.new(0, 600, 0, 450)
+    local Main = Utility.Create('Frame', {
+        Name = 'Main',
+        Parent = Window,
+        BackgroundColor3 = Theme.BackgroundColor,
+        BorderColor3 = Theme.OutlineColor,
+        BorderSizePixel = 1,
+        Position = UDim2.new(0.5, -300, 0.5, -250),
+        Size = UDim2.new(0, 600, 0, 500)
     })
 
-    -- Title Bar (Draggable Handle)
-    self.TitleBar = Create("Frame", {
-        Name = "TitleBar",
-        Parent = self.Main,
-        BackgroundColor3 = Color3.fromRGB(57, 57, 57),
-        BorderColor3 = Color3.fromRGB(0, 0, 0),
-        BorderSizePixel = 2,
-        Position = UDim2.new(0, 0, 0, 0),
+    -- Title Bar
+    local TitleBar = Utility.Create('Frame', {
+        Name = 'TitleBar',
+        Parent = Main,
+        BackgroundColor3 = Theme.MainColor,
+        BorderColor3 = Theme.OutlineColor,
+        BorderSizePixel = 1,
         Size = UDim2.new(1, 0, 0, 30)
     })
 
-    self.TitleText = Create("TextLabel", {
-        Name = "Title",
-        Parent = self.TitleBar,
+    local TitleText = Utility.Create('TextLabel', {
+        Name = 'Title',
+        Parent = TitleBar,
         BackgroundTransparency = 1,
         Position = UDim2.new(0, 10, 0, 0),
         Size = UDim2.new(1, -20, 1, 0),
-        Font = Enum.Font.SourceSansBold,
-        Text = title or "Library",
-        TextColor3 = Color3.fromRGB(255, 255, 255),
+        Font = Enum.Font.Gotham,
+        Text = WindowName,
+        TextColor3 = Theme.TextColor,
         TextSize = 14,
         TextXAlignment = Enum.TextXAlignment.Left
     })
 
-    -- Make UI draggable from title bar
-    MakeDraggable(self.Main, self.TitleBar)
-
-    -- Main Content Container
-    self.ContentContainer = Create("Frame", {
-        Name = "ContentContainer",
-        Parent = self.Main,
-        BackgroundColor3 = Color3.fromRGB(72, 72, 72),
-        BorderColor3 = Color3.fromRGB(0, 0, 0),
-        Position = UDim2.new(0, 10, 0, 40),
-        Size = UDim2.new(1, -20, 1, -80)
+    -- Content Container
+    local ContentContainer = Utility.Create('Frame', {
+        Name = 'ContentContainer',
+        Parent = Main,
+        BackgroundColor3 = Theme.MainColor,
+        BorderColor3 = Theme.OutlineColor,
+        BorderSizePixel = 1,
+        Position = UDim2.new(0, 0, 0, 30),
+        Size = UDim2.new(1, 0, 1, -30)
     })
 
-    -- Tab Container (Left Side)
-    self.TabContainer = Create("Frame", {
-        Name = "TabContainer",
-        Parent = self.ContentContainer,
-        BackgroundColor3 = Color3.fromRGB(84, 84, 84),
-        BorderColor3 = Color3.fromRGB(0, 0, 0),
+    -- Tab Container
+    local TabContainer = Utility.Create('Frame', {
+        Name = 'TabContainer',
+        Parent = ContentContainer,
+        BackgroundColor3 = Theme.MainColor,
+        BorderColor3 = Theme.OutlineColor,
+        BorderSizePixel = 1,
+        Size = UDim2.new(0, 125, 1, 0)
+    })
+
+    local TabList = Utility.Create('ScrollingFrame', {
+        Name = 'TabList',
+        Parent = TabContainer,
+        BackgroundTransparency = 1,
         Position = UDim2.new(0, 0, 0, 0),
-        Size = UDim2.new(0.2, 0, 1, 0)
+        Size = UDim2.new(1, 0, 1, 0),
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        ScrollBarThickness = 0
     })
 
-    -- Tab Content Container (Right Side)
-    self.TabContentContainer = Create("Frame", {
-        Name = "TabContentContainer",
-        Parent = self.ContentContainer,
-        BackgroundColor3 = Color3.fromRGB(84, 84, 84),
-        BorderColor3 = Color3.fromRGB(0, 0, 0),
-        Position = UDim2.new(0.2, 10, 0, 0),
-        Size = UDim2.new(0.8, -10, 1, 0)
-    })
-
-    -- Create tab list layout
-    self.TabList = Create("UIListLayout", {
-        Parent = self.TabContainer,
+    local TabListLayout = Utility.Create('UIListLayout', {
+        Parent = TabList,
         SortOrder = Enum.SortOrder.LayoutOrder,
         Padding = UDim.new(0, 2)
     })
 
-    return self
-end
-
-function Library:CreateTab(name)
-    local tab = {
-        Name = name,
-        Groupboxes = {},
-        Sections = {}
-    }
-
-    -- Create tab button (Linoria style)
-    tab.TabButton = Create("TextButton", {
-        Name = name .. "Button",
-        Parent = self.TabContainer,
-        BackgroundColor3 = Color3.fromRGB(91, 91, 91),
-        BorderColor3 = Color3.fromRGB(0, 0, 0),
-        Size = UDim2.new(1, 0, 0, 30),
-        Text = name,
-        TextColor3 = Color3.fromRGB(255, 255, 255),
-        Font = Enum.Font.SourceSans,
-        TextSize = 14,
-        AutoButtonColor = false
-    })
-
-    -- Create tab content container
-    tab.Container = Create("ScrollingFrame", {
-        Name = name .. "Container",
-        Parent = self.TabContentContainer,
+    -- Tab Content Area
+    local TabContentArea = Utility.Create('Frame', {
+        Name = 'TabContentArea',
+        Parent = ContentContainer,
         BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 1, 0),
-        Visible = false,
-        ScrollBarThickness = 4,
-        ScrollingDirection = Enum.ScrollingDirection.Y,
-        CanvasSize = UDim2.new(0, 0, 2, 0)
+        Position = UDim2.new(0, 125, 0, 0),
+        Size = UDim2.new(1, -125, 1, 0)
     })
 
-    -- Column containers
-    tab.LeftColumn = Create("Frame", {
-        Name = "LeftColumn",
-        Parent = tab.Container,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 0, 0, 0),
-        Size = UDim2.new(0.5, -5, 1, 0)
-    })
+    -- Dragging Functionality
+    local Dragging = false
+    local DragStart = nil
+    local StartPosition = nil
 
-    tab.RightColumn = Create("Frame", {
-        Name = "RightColumn",
-        Parent = tab.Container,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0.5, 5, 0, 0),
-        Size = UDim2.new(0.5, -5, 1, 0)
-    })
-
-    -- Tab button click handler
-    tab.TabButton.MouseButton1Click:Connect(function()
-        self:SelectTab(name)
+    TitleBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            Dragging = true
+            DragStart = input.Position
+            StartPosition = Main.Position
+        end
     end)
 
-    -- Add to registry
-    self.Registry[name] = tab
-    table.insert(self.Tabs, tab)
-
-    -- Select first tab by default
-    if #self.Tabs == 1 then
-        self:SelectTab(name)
-    end
-
-    -- Create layouts for columns
-    Create("UIListLayout", {
-        Parent = tab.LeftColumn,
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        Padding = UDim.new(0, 5)
-    })
-
-    Create("UIListLayout", {
-        Parent = tab.RightColumn,
-        SortOrder = Enum.SortOrder.LayoutOrder,
-        Padding = UDim.new(0, 5)
-    })
-
-    return tab
-end
-
-function Library:SelectTab(name)
-    local tab = self.Registry[name]
-    if not tab then return end
-
-    -- Hide all tabs
-    for _, otherTab in pairs(self.Registry) do
-        if otherTab.Container then
-            otherTab.Container.Visible = false
+    TitleBar.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            Dragging = false
         end
-        if otherTab.TabButton then
-            otherTab.TabButton.BackgroundColor3 = Color3.fromRGB(91, 91, 91)
-            otherTab.TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement and Dragging then
+            local Delta = input.Position - DragStart
+            Main.Position = UDim2.new(
+                StartPosition.X.Scale,
+                StartPosition.X.Offset + Delta.X,
+                StartPosition.Y.Scale,
+                StartPosition.Y.Offset + Delta.Y
+            )
         end
-    end
+    end)
 
-    -- Show selected tab
-    tab.Container.Visible = true
-    tab.TabButton.BackgroundColor3 = Color3.fromRGB(120, 120, 120)
-    tab.TabButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    self.SelectedTab = tab
-end
-
-function Library:CreateGroupbox(tab, name, side)
-    if not self.Registry[tab] then return end
-    
-    local parent = side == "Left" and self.Registry[tab].LeftColumn or self.Registry[tab].RightColumn
-    
-    local groupbox = {
-        Elements = {}
+    local Window = {
+        Tabs = {}
     }
-    
-    groupbox.Container = Create("Frame", {
-        Name = name .. "Groupbox",
-        Parent = parent,
-        BackgroundColor3 = Color3.fromRGB(72, 72, 72),
-        BorderColor3 = Color3.fromRGB(0, 0, 0),
-        Size = UDim2.new(1, 0, 0, 100)
-    })
 
-    groupbox.Title = Create("TextLabel", {
-        Name = "Title",
-        Parent = groupbox.Container,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 5, 0, -10),
-        Size = UDim2.new(1, -10, 0, 20),
-        Font = Enum.Font.SourceSansBold,
-        Text = name,
-        TextColor3 = Color3.fromRGB(255, 255, 255),
-        TextSize = 14,
-        TextXAlignment = Enum.TextXAlignment.Left
-    })
+    function Window:CreateTab(name)
+        local Tab = {
+            Name = name,
+            GroupBoxes = {}
+        }
 
-    return groupbox
-end
+        -- Tab Button
+        local TabButton = Utility.Create('TextButton', {
+            Name = name .. 'Button',
+            Parent = TabList,
+            BackgroundColor3 = Theme.MainColor,
+            BorderColor3 = Theme.OutlineColor,
+            BorderSizePixel = 1,
+            Size = UDim2.new(1, -4, 0, 30),
+            Font = Enum.Font.Gotham,
+            Text = name,
+            TextColor3 = Theme.TextColor,
+            TextSize = 12,
+            AutoButtonColor = false
+        })
 
-function Library:Destroy()
-    if self.ScreenGui then
-        self.ScreenGui:Destroy()
+        -- Tab Content
+        local TabContent = Utility.Create('Frame', {
+            Name = name .. 'Content',
+            Parent = TabContentArea,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 1, 0),
+            Visible = false
+        })
+
+        -- Left Column
+        local LeftColumn = Utility.Create('Frame', {
+            Name = 'LeftColumn',
+            Parent = TabContent,
+            BackgroundTransparency = 1,
+            Position = UDim2.new(0, 8, 0, 8),
+            Size = UDim2.new(0.5, -12, 1, -16)
+        })
+
+        -- Right Column
+        local RightColumn = Utility.Create('Frame', {
+            Name = 'RightColumn',
+            Parent = TabContent,
+            BackgroundTransparency = 1,
+            Position = UDim2.new(0.5, 4, 0, 8),
+            Size = UDim2.new(0.5, -12, 1, -16)
+        })
+
+        TabButton.MouseButton1Click:Connect(function()
+            for _, t in pairs(Window.Tabs) do
+                t.Content.Visible = false
+                t.Button.BackgroundColor3 = Theme.MainColor
+            end
+            TabContent.Visible = true
+            TabButton.BackgroundColor3 = Theme.AccentColor
+        end)
+
+        Tab.Button = TabButton
+        Tab.Content = TabContent
+        Tab.LeftColumn = LeftColumn
+        Tab.RightColumn = RightColumn
+
+        table.insert(Window.Tabs, Tab)
+
+        -- Show first tab by default
+        if #Window.Tabs == 1 then
+            TabContent.Visible = true
+            TabButton.BackgroundColor3 = Theme.AccentColor
+        end
+
+        function Tab:CreateGroupBox(name, side)
+            side = side or 'left'
+            local Column = side:lower() == 'left' and LeftColumn or RightColumn
+
+            local GroupBox = Utility.Create('Frame', {
+                Name = name .. 'GroupBox',
+                Parent = Column,
+                BackgroundColor3 = Theme.MainColor,
+                BorderColor3 = Theme.OutlineColor,
+                BorderSizePixel = 1,
+                Size = UDim2.new(1, 0, 0, 100)
+            })
+
+            local GroupBoxTitle = Utility.Create('TextLabel', {
+                Name = 'Title',
+                Parent = GroupBox,
+                BackgroundTransparency = 1,
+                Position = UDim2.new(0, 8, 0, -8),
+                Size = UDim2.new(0, 0, 0, 16),
+                Font = Enum.Font.Gotham,
+                Text = name,
+                TextColor3 = Theme.TextColor,
+                TextSize = 12,
+                AutomaticSize = Enum.AutomaticSize.X
+            })
+
+            return GroupBox
+        end
+
+        return Tab
     end
-    
-    self.Registry = {}
-    self.Tabs = {}
-    self.SelectedTab = nil
+
+    return Window
 end
 
 return Library
