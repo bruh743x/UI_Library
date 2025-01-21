@@ -147,7 +147,13 @@ function Library:CreateWindow(options)
         end
     end)
 
-    local Window = { Tabs = {} }
+    local Window = { 
+        Tabs = {},
+        ActiveTab = nil,
+        CreateTab = Window.CreateTab,
+        CreateToggle = Window.CreateToggle,
+        CreateSlider = Window.CreateSlider  -- Add this line
+    }
 
     function Window:CreateToggle(tab, groupbox, name, default, callback)
         local Toggle = {
