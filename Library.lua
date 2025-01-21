@@ -324,110 +324,110 @@ function Library:CreateWindow(options)
         return Tab
     end
 
-    return Window
-end
-
-function Window:CreateSlider(groupbox, name, options)
-    options = options or {}
-    local Slider = {
-        Value = options.default or options.min or 0,
-        Min = options.min or 0,
-        Max = options.max or 100,
-        Decimals = options.decimals or 0,
-        ValueName = options.valueName or "",
-        Callback = options.callback or function() end
-    }
-
-    local SliderContainer = Utility.Create('Frame', {
-        Name = name .. 'Slider',
-        Parent = groupbox,
-        BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 0, 32)
-    })
-
-    local SliderLabel = Utility.Create('TextLabel', {
-        Name = 'Label',
-        Parent = SliderContainer,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(0, 0, 0, 0),
-        Size = UDim2.new(1, 0, 0, 14),
-        Font = Enum.Font.Gotham,
-        Text = name,
-        TextColor3 = Theme.TextColor,
-        TextSize = 13,
-        TextXAlignment = Enum.TextXAlignment.Left
-    })
-
-    local ValueLabel = Utility.Create('TextLabel', {
-        Name = 'Value',
-        Parent = SliderContainer,
-        BackgroundTransparency = 1,
-        Position = UDim2.new(1, -50, 0, 0),
-        Size = UDim2.new(0, 50, 0, 14),
-        Font = Enum.Font.Gotham,
-        TextColor3 = Theme.TextColor,
-        TextSize = 13,
-        TextXAlignment = Enum.TextXAlignment.Right
-    })
-
-    local SliderBack = Utility.Create('Frame', {
-        Name = 'Back',
-        Parent = SliderContainer,
-        BackgroundColor3 = Theme.MainColor,
-        BorderColor3 = Theme.OutlineColor,
-        BorderSizePixel = 1,
-        Position = UDim2.new(0, 0, 0, 20),
-        Size = UDim2.new(1, 0, 0, 6)
-    })
-
-    local SliderFill = Utility.Create('Frame', {
-        Name = 'Fill',
-        Parent = SliderBack,
-        BackgroundColor3 = Theme.AccentColor,
-        BorderSizePixel = 0,
-        Size = UDim2.new(0, 0, 1, 0)
-    })
-
-    local function SetValue(value)
-        value = math.clamp(value, Slider.Min, Slider.Max)
-        if Slider.Decimals > 0 then
-            Slider.Value = math.floor(value * 10^Slider.Decimals) / 10^Slider.Decimals
-        else
-            Slider.Value = math.floor(value)
+    function Window:CreateSlider(groupbox, name, options)
+        options = options or {}
+        local Slider = {
+            Value = options.default or options.min or 0,
+            Min = options.min or 0,
+            Max = options.max or 100,
+            Decimals = options.decimals or 0,
+            ValueName = options.valueName or "",
+            Callback = options.callback or function() end
+        }
+    
+        local SliderContainer = Utility.Create('Frame', {
+            Name = name .. 'Slider',
+            Parent = groupbox,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 32)
+        })
+    
+        local SliderLabel = Utility.Create('TextLabel', {
+            Name = 'Label',
+            Parent = SliderContainer,
+            BackgroundTransparency = 1,
+            Position = UDim2.new(0, 0, 0, 0),
+            Size = UDim2.new(1, 0, 0, 14),
+            Font = Enum.Font.Gotham,
+            Text = name,
+            TextColor3 = Theme.TextColor,
+            TextSize = 13,
+            TextXAlignment = Enum.TextXAlignment.Left
+        })
+    
+        local ValueLabel = Utility.Create('TextLabel', {
+            Name = 'Value',
+            Parent = SliderContainer,
+            BackgroundTransparency = 1,
+            Position = UDim2.new(1, -50, 0, 0),
+            Size = UDim2.new(0, 50, 0, 14),
+            Font = Enum.Font.Gotham,
+            TextColor3 = Theme.TextColor,
+            TextSize = 13,
+            TextXAlignment = Enum.TextXAlignment.Right
+        })
+    
+        local SliderBack = Utility.Create('Frame', {
+            Name = 'Back',
+            Parent = SliderContainer,
+            BackgroundColor3 = Theme.MainColor,
+            BorderColor3 = Theme.OutlineColor,
+            BorderSizePixel = 1,
+            Position = UDim2.new(0, 0, 0, 20),
+            Size = UDim2.new(1, 0, 0, 6)
+        })
+    
+        local SliderFill = Utility.Create('Frame', {
+            Name = 'Fill',
+            Parent = SliderBack,
+            BackgroundColor3 = Theme.AccentColor,
+            BorderSizePixel = 0,
+            Size = UDim2.new(0, 0, 1, 0)
+        })
+    
+        local function SetValue(value)
+            value = math.clamp(value, Slider.Min, Slider.Max)
+            if Slider.Decimals > 0 then
+                Slider.Value = math.floor(value * 10^Slider.Decimals) / 10^Slider.Decimals
+            else
+                Slider.Value = math.floor(value)
+            end
+    
+            local percent = (Slider.Value - Slider.Min) / (Slider.Max - Slider.Min)
+            SliderFill.Size = UDim2.new(percent, 0, 1, 0)
+            ValueLabel.Text = tostring(Slider.Value) .. Slider.ValueName
+            Slider.Callback(Slider.Value)
         end
-
-        local percent = (Slider.Value - Slider.Min) / (Slider.Max - Slider.Min)
-        SliderFill.Size = UDim2.new(percent, 0, 1, 0)
-        ValueLabel.Text = tostring(Slider.Value) .. Slider.ValueName
-        Slider.Callback(Slider.Value)
+    
+        local Dragging = false
+    
+        SliderBack.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                Dragging = true
+                local percentage = math.clamp((input.Position.X - SliderBack.AbsolutePosition.X) / SliderBack.AbsoluteSize.X, 0, 1)
+                SetValue(Slider.Min + ((Slider.Max - Slider.Min) * percentage))
+            end
+        end)
+    
+        UserInputService.InputChanged:Connect(function(input)
+            if Dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                local percentage = math.clamp((input.Position.X - SliderBack.AbsolutePosition.X) / SliderBack.AbsoluteSize.X, 0, 1)
+                SetValue(Slider.Min + ((Slider.Max - Slider.Min) * percentage))
+            end
+        end)
+    
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                Dragging = false
+            end
+        end)
+    
+        SetValue(Slider.Value)
+        Library.Options[name] = Slider
+        return Slider
     end
 
-    local Dragging = false
-
-    SliderBack.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            Dragging = true
-            local percentage = math.clamp((input.Position.X - SliderBack.AbsolutePosition.X) / SliderBack.AbsoluteSize.X, 0, 1)
-            SetValue(Slider.Min + ((Slider.Max - Slider.Min) * percentage))
-        end
-    end)
-
-    UserInputService.InputChanged:Connect(function(input)
-        if Dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-            local percentage = math.clamp((input.Position.X - SliderBack.AbsolutePosition.X) / SliderBack.AbsoluteSize.X, 0, 1)
-            SetValue(Slider.Min + ((Slider.Max - Slider.Min) * percentage))
-        end
-    end)
-
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            Dragging = false
-        end
-    end)
-
-    SetValue(Slider.Value)
-    Library.Options[name] = Slider
-    return Slider
+    return Window
 end
 
 return Library
