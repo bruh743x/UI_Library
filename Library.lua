@@ -1,5 +1,5 @@
 local Library = {
-    Name    = 'LinoriaLibrary',
+    Name = 'LinoriaLibrary',
     Version = '1.0.0',
     Toggles = {},
     Options = {},
@@ -96,15 +96,17 @@ function Library:CreateWindow(options)
         Size = UDim2.new(0, 125, 1, 0)
     })
 
-    local TabListContainer = Utility.Create('Frame', {
-        Name = 'TabListContainer',
+    local TabList = Utility.Create('ScrollingFrame', {
+        Name = 'TabList',
         Parent = TabContainer,
         BackgroundTransparency = 1,
-        Size = UDim2.new(1, 0, 1, 0)
+        Size = UDim2.new(1, 0, 1, 0),
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        ScrollBarThickness = 0
     })
 
-    local TabList = Utility.Create('UIListLayout', {
-        Parent = TabListContainer,
+    Utility.Create('UIListLayout', {
+        Parent = TabList,
         SortOrder = Enum.SortOrder.LayoutOrder,
         Padding = UDim.new(0, 2)
     })
@@ -145,143 +147,9 @@ function Library:CreateWindow(options)
         end
     end)
 
-    local Window = { 
-        Tabs = {},
-        ActiveTab = nil
-    }
+    local Window = { Tabs = {} }
 
-    function Window:CreateTab(name)
-        local Tab = {
-            Name = name,
-            GroupBoxes = {},
-            Toggles = {}
-        }
-
-        local TabButton = Utility.Create('TextButton', {
-            Name = name .. 'Button',
-            Parent = TabListContainer,
-            BackgroundColor3 = Theme.MainColor,
-            BorderColor3 = Theme.OutlineColor,
-            BorderSizePixel = 1,
-            Size = UDim2.new(1, -4, 0, 30),
-            Font = Enum.Font.Gotham,
-            Text = name,
-            TextColor3 = Theme.TextColor,
-            TextSize = 12,
-            AutoButtonColor = false
-        })
-
-        local TabFrame = Utility.Create('Frame', {
-            Name = name .. 'Tab',
-            Parent = TabContentArea,
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 1, 0),
-            Visible = false
-        })
-
-        local LeftColumn = Utility.Create('Frame', {
-            Name = 'LeftColumn',
-            Parent = TabFrame,
-            BackgroundTransparency = 1,
-            Position = UDim2.new(0, 8, 0, 8),
-            Size = UDim2.new(0.5, -12, 1, -16)
-        })
-
-        local RightColumn = Utility.Create('Frame', {
-            Name = 'RightColumn',
-            Parent = TabFrame,
-            BackgroundTransparency = 1,
-            Position = UDim2.new(0.5, 4, 0, 8),
-            Size = UDim2.new(0.5, -12, 1, -16)
-        })
-
-        Utility.Create('UIListLayout', {
-            Parent = LeftColumn,
-            SortOrder = Enum.SortOrder.LayoutOrder,
-            Padding = UDim.new(0, 8)
-        })
-
-        Utility.Create('UIListLayout', {
-            Parent = RightColumn,
-            SortOrder = Enum.SortOrder.LayoutOrder,
-            Padding = UDim.new(0, 8)
-        })
-
-        Tab.Button = TabButton
-        Tab.Frame = TabFrame
-        Tab.LeftColumn = LeftColumn
-        Tab.RightColumn = RightColumn
-
-        TabButton.MouseButton1Click:Connect(function()
-            if Window.ActiveTab == Tab then return end
-            
-            if Window.ActiveTab then
-                Window.ActiveTab.Frame.Visible = false
-                Window.ActiveTab.Button.BackgroundColor3 = Theme.MainColor
-            end
-
-            Tab.Frame.Visible = true
-            Tab.Button.BackgroundColor3 = Theme.AccentColor
-            Window.ActiveTab = Tab
-        end)
-
-        table.insert(Window.Tabs, Tab)
-
-        if #Window.Tabs == 1 then
-            TabFrame.Visible = true
-            TabButton.BackgroundColor3 = Theme.AccentColor
-            Window.ActiveTab = Tab
-        end
-
-        return Tab
-    end
-
-    function Window:CreateGroupbox(tab, name, side)
-        local Column = side:lower() == 'left' and tab.LeftColumn or tab.RightColumn
-
-        local GroupBox = Utility.Create('Frame', {
-            Name = name .. 'GroupBox',
-            Parent = Column,
-            BackgroundColor3 = Theme.MainColor,
-            BorderColor3 = Theme.OutlineColor,
-            BorderSizePixel = 1,
-            Size = UDim2.new(1, 0, 0, 0),
-            AutomaticSize = Enum.AutomaticSize.Y
-        })
-
-        local Container = Utility.Create('Frame', {
-            Name = 'Container',
-            Parent = GroupBox,
-            BackgroundTransparency = 1,
-            Position = UDim2.new(0, 8, 0, 8),
-            Size = UDim2.new(1, -16, 1, -16),
-            AutomaticSize = Enum.AutomaticSize.Y
-        })
-
-        local UIListLayout = Utility.Create('UIListLayout', {
-            Parent = Container,
-            SortOrder = Enum.SortOrder.LayoutOrder,
-            Padding = UDim.new(0, 4)
-        })
-
-        Utility.Create('TextLabel', {
-            Name = 'Title',
-            Parent = GroupBox,
-            BackgroundColor3 = Theme.BackgroundColor,
-            BorderSizePixel = 0,
-            Position = UDim2.new(0, 8, 0, -8),
-            Size = UDim2.new(0, 0, 0, 16),
-            Font = Enum.Font.Gotham,
-            Text = name,
-            TextColor3 = Theme.TextColor,
-            TextSize = 12,
-            AutomaticSize = Enum.AutomaticSize.X
-        })
-
-        return Container
-    end
-
-    function Window:CreateToggle(groupbox, name, default, callback)
+    function Window:CreateToggle(tab, groupbox, name, default, callback)
         local Toggle = {
             Value = default or false,
             Callback = callback or function() end
@@ -291,7 +159,7 @@ function Library:CreateWindow(options)
             Name = name .. 'Toggle',
             Parent = groupbox,
             BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 20),
+            Size = UDim2.new(1, 0, 0, 25)
         })
 
         local ToggleButton = Utility.Create('Frame', {
@@ -300,7 +168,7 @@ function Library:CreateWindow(options)
             BackgroundColor3 = Toggle.Value and Theme.AccentColor or Theme.MainColor,
             BorderColor3 = Theme.OutlineColor,
             BorderSizePixel = 1,
-            Position = UDim2.new(0, 0, 0, 2),
+            Position = UDim2.new(0, 8, 0, 4),
             Size = UDim2.new(0, 16, 0, 16)
         })
 
@@ -308,8 +176,8 @@ function Library:CreateWindow(options)
             Name = 'Text',
             Parent = ToggleContainer,
             BackgroundTransparency = 1,
-            Position = UDim2.new(0, 24, 0, 0),
-            Size = UDim2.new(1, -24, 1, 0),
+            Position = UDim2.new(0, 32, 0, 0),
+            Size = UDim2.new(1, -40, 1, 0),
             Font = Enum.Font.Gotham,
             Text = name,
             TextColor3 = Theme.TextColor,
@@ -329,7 +197,231 @@ function Library:CreateWindow(options)
         return Toggle
     end
 
+    function Window:CreateTab(name)
+        local Tab = {
+            Name = name,
+            GroupBoxes = {}
+        }
+
+        local TabButton = Utility.Create('TextButton', {
+            Name = name .. 'Button',
+            Parent = TabList,
+            BackgroundColor3 = Theme.MainColor,
+            BorderColor3 = Theme.OutlineColor,
+            BorderSizePixel = 1,
+            Size = UDim2.new(1, -4, 0, 30),
+            Font = Enum.Font.Gotham,
+            Text = name,
+            TextColor3 = Theme.TextColor,
+            TextSize = 12,
+            AutoButtonColor = false
+        })
+
+        local TabContent = Utility.Create('Frame', {
+            Name = name .. 'Content',
+            Parent = TabContentArea,
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 1, 0),
+            Visible = false
+        })
+
+        local LeftColumn = Utility.Create('Frame', {
+            Name = 'LeftColumn',
+            Parent = TabContent,
+            BackgroundTransparency = 1,
+            Position = UDim2.new(0, 8, 0, 8),
+            Size = UDim2.new(0.5, -12, 1, -16)
+        })
+
+        local RightColumn = Utility.Create('Frame', {
+            Name = 'RightColumn',
+            Parent = TabContent,
+            BackgroundTransparency = 1,
+            Position = UDim2.new(0.5, 4, 0, 8),
+            Size = UDim2.new(0.5, -12, 1, -16)
+        })
+
+        TabButton.MouseButton1Click:Connect(function()
+            for _, t in pairs(Window.Tabs) do
+                t.Content.Visible = false
+                t.Button.BackgroundColor3 = Theme.MainColor
+            end
+            TabContent.Visible = true
+            TabButton.BackgroundColor3 = Theme.AccentColor
+        end)
+
+        Tab.Button = TabButton
+        Tab.Content = TabContent
+        Tab.LeftColumn = LeftColumn
+        Tab.RightColumn = RightColumn
+
+        table.insert(Window.Tabs, Tab)
+
+        if #Window.Tabs == 1 then
+            TabContent.Visible = true
+            TabButton.BackgroundColor3 = Theme.AccentColor
+        end
+
+        function Window:CreateGroupbox(tab, name, side)
+            local Column = side:lower() == 'left' and tab.LeftColumn or tab.RightColumn
+    
+            local GroupBox = Utility.Create('Frame', {
+                Name = name .. 'GroupBox',
+                Parent = Column,
+                BackgroundColor3 = Theme.MainColor,
+                BorderColor3 = Theme.OutlineColor,
+                BorderSizePixel = 1,
+                Size = UDim2.new(1, 0, 0, 0),
+                AutomaticSize = Enum.AutomaticSize.Y
+            })
+    
+            local Container = Utility.Create('Frame', {
+                Name = 'Container',
+                Parent = GroupBox,
+                BackgroundTransparency = 1,
+                Position = UDim2.new(0, 8, 0, 8),
+                Size = UDim2.new(1, -16, 1, -16),
+                AutomaticSize = Enum.AutomaticSize.Y
+            })
+    
+            local UIListLayout = Utility.Create('UIListLayout', {
+                Parent = Container,
+                SortOrder = Enum.SortOrder.LayoutOrder,
+                Padding = UDim.new(0, 4)
+            })
+    
+            local TitleLabel = Utility.Create('TextLabel', {
+                Name = 'Title',
+                Parent = GroupBox,
+                BackgroundTransparency = 1,
+                Position = UDim2.new(0, 8, 0, -8),
+                Size = UDim2.new(0, 0, 0, 16),
+                Font = Enum.Font.Gotham,
+                Text = name,
+                TextColor3 = Theme.TextColor,
+                TextSize = 12,
+                AutomaticSize = Enum.AutomaticSize.X
+            })
+    
+            local TitlePadding = Utility.Create('Frame', {
+                Name = 'TitlePadding',
+                Parent = TitleLabel,
+                BackgroundColor3 = Theme.BackgroundColor,
+                BorderSizePixel = 0,
+                Size = UDim2.new(1, 4, 1, 0),
+                ZIndex = -1
+            })
+    
+            return Container
+        end
+
+        return Tab
+    end
+
     return Window
+end
+
+function Window:CreateSlider(groupbox, name, options)
+    options = options or {}
+    local Slider = {
+        Value = options.default or options.min or 0,
+        Min = options.min or 0,
+        Max = options.max or 100,
+        Decimals = options.decimals or 0,
+        ValueName = options.valueName or "",
+        Callback = options.callback or function() end
+    }
+
+    local SliderContainer = Utility.Create('Frame', {
+        Name = name .. 'Slider',
+        Parent = groupbox,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(1, 0, 0, 32)
+    })
+
+    local SliderLabel = Utility.Create('TextLabel', {
+        Name = 'Label',
+        Parent = SliderContainer,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 0, 0, 0),
+        Size = UDim2.new(1, 0, 0, 14),
+        Font = Enum.Font.Gotham,
+        Text = name,
+        TextColor3 = Theme.TextColor,
+        TextSize = 13,
+        TextXAlignment = Enum.TextXAlignment.Left
+    })
+
+    local ValueLabel = Utility.Create('TextLabel', {
+        Name = 'Value',
+        Parent = SliderContainer,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(1, -50, 0, 0),
+        Size = UDim2.new(0, 50, 0, 14),
+        Font = Enum.Font.Gotham,
+        TextColor3 = Theme.TextColor,
+        TextSize = 13,
+        TextXAlignment = Enum.TextXAlignment.Right
+    })
+
+    local SliderBack = Utility.Create('Frame', {
+        Name = 'Back',
+        Parent = SliderContainer,
+        BackgroundColor3 = Theme.MainColor,
+        BorderColor3 = Theme.OutlineColor,
+        BorderSizePixel = 1,
+        Position = UDim2.new(0, 0, 0, 20),
+        Size = UDim2.new(1, 0, 0, 6)
+    })
+
+    local SliderFill = Utility.Create('Frame', {
+        Name = 'Fill',
+        Parent = SliderBack,
+        BackgroundColor3 = Theme.AccentColor,
+        BorderSizePixel = 0,
+        Size = UDim2.new(0, 0, 1, 0)
+    })
+
+    local function SetValue(value)
+        value = math.clamp(value, Slider.Min, Slider.Max)
+        if Slider.Decimals > 0 then
+            Slider.Value = math.floor(value * 10^Slider.Decimals) / 10^Slider.Decimals
+        else
+            Slider.Value = math.floor(value)
+        end
+
+        local percent = (Slider.Value - Slider.Min) / (Slider.Max - Slider.Min)
+        SliderFill.Size = UDim2.new(percent, 0, 1, 0)
+        ValueLabel.Text = tostring(Slider.Value) .. Slider.ValueName
+        Slider.Callback(Slider.Value)
+    end
+
+    local Dragging = false
+
+    SliderBack.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            Dragging = true
+            local percentage = math.clamp((input.Position.X - SliderBack.AbsolutePosition.X) / SliderBack.AbsoluteSize.X, 0, 1)
+            SetValue(Slider.Min + ((Slider.Max - Slider.Min) * percentage))
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if Dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local percentage = math.clamp((input.Position.X - SliderBack.AbsolutePosition.X) / SliderBack.AbsoluteSize.X, 0, 1)
+            SetValue(Slider.Min + ((Slider.Max - Slider.Min) * percentage))
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            Dragging = false
+        end
+    end)
+
+    SetValue(Slider.Value)
+    Library.Options[name] = Slider
+    return Slider
 end
 
 return Library
